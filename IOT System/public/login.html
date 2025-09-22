@@ -1,0 +1,180 @@
+<!DOCTYPE html> 
+<html lang="en"> 
+<head> 
+<meta charset="UTF-8">
+ <meta name="viewport" content="width=device-width, initial-scale=1.0"> <title>Login/Register Form</title> 
+<style>
+ /* Your CSS styles remain the same */ 
+body { 
+display: flex;
+ justify-content: center;
+ align-items: center; 
+height: 100vh;
+ margin: 0; 
+font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+ background: linear-gradient(135deg, #ff0000, #0000ff); 
+} 
+.form-container {
+ background-color: #ffffff;
+ padding: 40px; 
+border-radius: 8px; 
+width: 420px; 
+box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+ } 
+.form-container h2 {
+ font-size: 28px; 
+font-weight: bold; 
+color: #333; 
+margin-top: 0;
+ margin-bottom: 30px;
+ } 
+.form-group {
+ margin-bottom: 20px;
+ } 
+.form-group label {
+ display: block; 
+margin-bottom: 8px;
+ color: #555;
+ font-size: 14px; 
+} 
+.form-group input[type="text"], 
+.form-group input[type="password"] { 
+width: 100%;
+ padding: 12px; 
+border: 1px solid #ced4da; 
+border-radius: 6px; 
+box-sizing: border-box;
+ } 
+.role-selection { 
+display: flex; 
+align-items: center;
+ gap: 20px; 
+} 
+.role-selection .radio-option { 
+display: flex;
+ align-items: center;
+ } 
+.role-selection input[type="radio"] {
+ margin-right: 8px; 
+} 
+.button-group { 
+display: flex; 
+gap: 15px; 
+margin-top: 30px;
+ } 
+.btn {
+ flex: 1;
+ padding: 12px;
+ border-radius: 6px; 
+border: none;
+ color: white;
+ font-size: 16px; 
+font-weight: 500;
+ cursor: pointer; 
+}
+ .btn-login { 
+background-color: #2f80ed; 
+} 
+.btn-register { 
+background-color: #566573;
+ } 
+</style> 
+</head>
+ <body>
+ <div class="form-container">
+ <h1><center><i>SAFE RIDE NOTIFY</center></h1></i> 
+<h2>Login / Register</h2>
+ <form id="auth-form"> 
+<div class="form-group"> 
+<label for="username">Username or Email</label> 
+<input type="text" id="username" name="username" 
+required>
+ </div> 
+<div class="form-group">
+ <label for="password">Password</label> 
+<input type="password" id="password" name="password"
+ required> 
+</div> 
+<div class="form-group"> 
+<label>Role</label>
+ <div class="role-selection">
+ <div class="radio-option"> 
+<input type="radio" id="user" name="role" 
+value="user" checked> 
+<label for="user">User</label>
+ </div> 
+<div class="radio-option"> 
+<input type="radio" id="admin" name="role"
+ value="admin"> 
+<label for="admin">Admin</label>
+ </div> 
+<div class="radio-option">
+ <input type="radio" id="emergency-responder" name="role" value="emergency-responder"> 
+<label for="emergency-responder">Emergency Responder</label>
+ </div>
+ </div> 
+</div> 
+<div class="button-group">
+ <button type="submit" class="btn btn-login" id="login-btn">Login</button> 
+<button type="button" class="btn btn-register" id="register-btn">Register</button> 
+</div> 
+</form> 
+</div>
+ <!-- START: NEW SCRIPT SECTION --> 
+<script>
+ const form = document.getElementById('auth-form');
+ const loginBtn = document.getElementById('login-btn');
+ const registerBtn = document.getElementById('register-btn');
+ // Handle Registration 
+registerBtn.addEventListener('click', async (event) => { 
+event.preventDefault(); // Prevent default form submission
+ const formData = new FormData(form); 
+const data = Object.fromEntries(formData.entries()); 
+try {
+ const response = await fetch('/register', {
+ method: 'POST',
+ headers: { 
+'Content-Type': 'application/json' 
+}, 
+body: JSON.stringify(data)
+ }); 
+const result = await response.json();
+ alert(result.message); // Show success/error message from server 
+} catch (error) { 
+console.error('Registration Error:', error);
+ alert('An error occurred during registration.');
+ } 
+});
+ // Handle Login 
+loginBtn.addEventListener('click', async (event) => {
+ event.preventDefault(); // Prevent form from submitting the old way 
+ const formData = new FormData(form); 
+ const data = Object.fromEntries(formData.entries()); 
+try { 
+const response = await fetch('/login', {
+ method: 'POST', 
+headers: {
+ 'Content-Type': 'application/json'
+ },
+ body: JSON.stringify(data) 
+}); 
+const result = await response.json();
+ alert(result.message); 
+ 
+ if (response.ok) {
+        // Redirect based on role
+        if (data.role === "admin" || data.role === "emergency-responder") {
+          window.location.href = `/map?username=${data.username}&role=${data.role}`;
+        } else {
+          window.location.href = `/user-home?username=${data.username}&role=${data.role}`;
+        }
+      }
+} catch (error) { 
+console.error('Login Error:', error);
+ alert('An error occurred during login.'); 
+}
+ });
+ </script> 
+<!-- END: NEW SCRIPT SECTION --> 
+</body>
+ </html>

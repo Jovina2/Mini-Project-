@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>User Home - Safe Ride Notify</title>
+<style>
+  /* General Reset */
+  * { 
+    box-sizing: border-box; 
+    margin: 0; 
+    padding: 0; 
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+  body {
+    background: linear-gradient(135deg,pink,pink);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .container {
+    position: relative;
+    background-color: #fff;
+    padding: 40px 30px;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    text-align: center;
+    width: 90%;
+    max-width: 450px;
+    overflow: hidden;
+    animation: fadeIn 1s ease-in-out;
+  }
+
+  /* Background Vehicle Image */
+  .container::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: url('/bg.png') no-repeat center center;
+    background-size: cover;
+    opacity: 0.15;
+    z-index: 0;
+  }
+
+  @keyframes fadeIn {
+    0% {opacity: 0; transform: translateY(-20px);}
+    100% {opacity: 1; transform: translateY(0);}
+  }
+
+  header {
+    font-size: 28px;
+    font-weight: 700;
+    color: pink;
+    margin-bottom: 25px;
+    position: relative; z-index: 1;
+  }
+
+  .welcome, .role { position: relative; z-index: 1; }
+
+  .welcome { font-size: 24px; font-weight: 600; margin-bottom: 10px; color: #333; }
+  .role { font-size: 16px; color: #666; margin-bottom: 30px; }
+
+  .logout-btn {
+    position: relative; z-index: 1;
+    padding: 14px 30px;
+    background: linear-gradient(135deg, #FF5F6D, #FFC371);
+    border: none; color: white;
+    font-size: 16px; font-weight: bold;
+    border-radius: 50px; cursor: pointer;
+    box-shadow: 0 5px 15px rgba(255,95,109,0.4);
+    transition: all 0.3s ease;
+  }
+  .logout-btn:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(255,95,109,0.5); }
+
+  /* Animated Car */
+  .car {
+    position: absolute;
+    bottom: 10px;
+    left: -60px; /* start off-screen */
+    width: 50px;
+    z-index: 2;
+    animation: drive 6s linear infinite;
+  }
+
+  @keyframes drive {
+    0% { left: -60px; transform: rotate(0deg); }
+    50% { left: calc(100% - 50px); transform: rotate(5deg); }
+    100% { left: -60px; transform: rotate(0deg); }
+  }
+
+  /* Responsive */
+  @media (max-width: 500px) {
+    .container { padding: 30px 20px; }
+    header { font-size: 24px; }
+    .welcome { font-size: 20px; }
+    .car { width: 40px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <header>SAFE RIDE NOTIFY</header>
+  <div class="welcome" id="welcome-text">Welcome, User!</div>
+  <div class="role" id="role-text"></div>
+  <button class="logout-btn" onclick="logout()">Logout</button>
+
+  <!-- Animated Car -->
+  <img src="/move_car.png" alt="Car" class="car">
+</div>
+
+<script>
+  const params = new URLSearchParams(window.location.search);
+  const username = params.get("username") || "User";
+  const role = params.get("role") || "user";
+
+  document.getElementById("welcome-text").textContent = `Welcome, ${username}!`;
+  document.getElementById("role-text").textContent = `You are logged in as: ${role}`;
+
+  function logout() {
+    window.location.href = "/login.html";
+  }
+</script>
+</body>
+</html>

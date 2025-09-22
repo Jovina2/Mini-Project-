@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Accident Detected Alert</title>
+<style>
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background-color: #f8f9fa;
+}
+.alert-container {
+    background-color: #fff;
+    width: 480px;
+    padding: 35px;
+    border-radius: 16px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+    text-align: center;
+    position: relative;
+}
+.alert-container h2 {
+    font-size: 28px;
+    font-weight: 700;
+    color: #333;
+    margin-top: 0;
+    margin-bottom: 25px;
+}
+.progress-bar-container {
+    width: 100%;
+    height: 10px;
+    background-color: #e9ecef;
+    border-radius: 5px;
+    overflow: hidden;
+    margin-bottom: 30px;
+}
+.progress-bar-fill {
+    height: 100%;
+    width: 100%;
+    background-color: #dc3545;
+    border-radius: 5px;
+    transition: width 0.1s linear;
+}
+.alert-text p {
+    font-size: 18px;
+    color: #555;
+    margin: 0;
+}
+.alert-text p:first-of-type { margin-bottom: 8px; }
+.button-group {
+    display: flex;
+    gap: 15px;
+    margin-top: 30px;
+}
+.btn {
+    flex: 1;
+    padding: 14px;
+    border-radius: 8px;
+    border: none;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+.btn-cancel { background-color: #28a745; color: white; }
+.btn-cancel:hover { background-color: #218838; }
+.btn-secondary { background-color: #d3d9df; color: #495057; }
+.btn-secondary:hover { background-color: #c8cfd5; }
+.alert-flash { animation: flash 1s infinite; }
+@keyframes flash {
+    0%, 50%, 100% { background-color: #dc3545; }
+    25%, 75% { background-color: #ff6b6b; }
+}
+</style>
+</head>
+<body>
+
+<div class="alert-container" id="alertContainer">
+    <h2>Accident Detected!</h2>
+    
+    <div class="progress-bar-container">
+        <div id="progressBar" class="progress-bar-fill"></div>
+    </div>
+
+    <div class="alert-text">
+        <p>Waiting for IoT accident...</p>
+        <p>Cancel if false alarm.</p>
+    </div>
+
+    <div class="button-group">
+        <button class="btn btn-cancel" id="cancelBtn">Cancel</button>
+        <button class="btn btn-secondary" id="letRunBtn">Let Timer Run Out</button>
+    </div>
+
+    <!-- Audio alarm -->
+    <audio id="alarmSound" loop>
+        <source src="https://www.soundjay.com/buttons/sounds/beep-07.mp3" type="audio/mpeg">
+    </audio>
+</div>
+
+<!-- Socket.IO -->
+<script src="/socket.io/socket.io.js"></script>
+<script>
+const socket = io();
+
+// Timer and alarm variables
+let countdown = 30;
+let timerActive = false;
+let intervalId = null;
+let dataFromIoT = null; // store latest IoT accident data
+const alarm = document.getElementById('alarmSound');
+
+// Ensure audio can play after first user interaction
+let audioUnlocked = false;
+document.body.addEventListener('click', () => {
+    if(!audioUnlocked){
+        alarm.play().then(() => {
+            alarm.pause();
+            alarm.currentTime = 0;
+            audioUnlocked = true;
+        }).catch(() => {});
+    }
+}, { once: true });
+
+// Play alarm safely
+function playAlarm() {
+    if(audioUnlocked) {
+        alarm.play().catch(() => {});
+    }
+}
+
+// ✅ Function to send alert details to backend
+function sendAlertToBackend(data) {
+    fetch('/api/accident-alert', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    })
+    .then(res => res.json())
+    .then(response => {
+        console.log('✅ Accident alert stored:', response);
+    })
+    .catch(err => {
+        console.error('❌ Error sending alert:', err);
+    });
+}
+
+// Start alert timer
+intervalId = setInterval(() => {
+    countdown--;
+    progressBar.style.width = (countdown / 30) * 100 + '%';
+    if (countdown <= 0) {
+        clearInterval(intervalId);
+        intervalId = null;
+        timerActive = false;
+        alertContainer.classList.remove('alert-flash');
+        alarm.pause();
+        alarm.currentTime = 0;
+        document.querySelector('.alert-text p:first-of-type').textContent = "Alert sent to responders!";
+
+        // Send accident details to backend
+        sendAlertToBackend({
+            vehicleId: dataFromIoT?.vehicleId || "Unknown",
+            speed: dataFromIoT?.speed || 0,
+            latitude: dataFromIoT?.latitude || 0,
+            longitude: dataFromIoT?.longitude || 0,
+            timestamp: new Date().toISOString()
+        });
+
+        // 🔴 Redirect to map page
+        window.location.href = "/map";
+    }
+}, 1000);
+// Cancel button
+document.getElementById('cancelBtn').addEventListener('click', () => {
+    if(intervalId) {
+        clearInterval(intervalId);
+        intervalId = null;
+    }
+    timerActive = false;
+    document.getElementById('alertContainer').classList.remove('alert-flash');
+    alarm.pause();
+    alarm.currentTime = 0;
+    document.getElementById('progressBar').style.width = '100%';
+    document.querySelector('.alert-text p:first-of-type').textContent = "Alert cancelled!";
+});
+
+// Let Timer Run Out button
+document.getElementById('letRunBtn').addEventListener('click', () => {
+    startAlertTimer();
+});
+
+// Listen for IoT accident via Socket.IO
+socket.on('accidentDetected', (data) => {
+    console.log('Accident detected via IoT!', data);
+
+    dataFromIoT = data; // Save IoT accident info
+
+    // Update vehicle info in alert box
+    document.querySelector('.alert-text').innerHTML = `
+        <p>Accident detected for Vehicle ID: ${data.vehicleId}</p>
+        <p>Speed: ${data.speed} km/h, Location: ${data.latitude}, ${data.longitude}</p>
+    `;
+
+    // Reset timer
+    countdown = 30;
+    if(intervalId) {
+        clearInterval(intervalId);
+        intervalId = null;
+    }
+    startAlertTimer();
+});
+</script>
+
+</body>
+</html>

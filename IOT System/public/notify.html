@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notifications List</title>
+    <style>
+        /* General Body Styles */
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #f0f2f5;
+        }
+
+        /* Main Container for the Notifications Box */
+        .notifications-container {
+            background-color: #ffffff;
+            width: 700px;
+            padding: 30px 40px;
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        /* Header Title */
+        .notifications-container h2 {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1c1c1e;
+            margin-top: 0;
+            margin-bottom: 25px;
+        }
+
+        /* Table Styles */
+        .notifications-table {
+            width: 100%;
+            border-collapse: collapse; /* Removes space between cell borders */
+            text-align: left;
+        }
+
+        /* Table Header (thead) and Table Body (tbody) Rows (tr) */
+        .notifications-table th,
+        .notifications-table td {
+            padding: 18px 10px;
+            border-bottom: 1px solid #e9ecef; /* Separator line between rows */
+            vertical-align: middle;
+        }
+        
+        .notifications-table tr:last-child td {
+            border-bottom: none; /* Removes the border from the last row */
+        }
+
+        /* Table Header Cells (th) */
+        .notifications-table th {
+            font-size: 14px;
+            font-weight: 600;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Table Data Cells (td) */
+        .notifications-table td {
+            font-size: 16px;
+            color: #343a40;
+        }
+
+        /* Specific styles for columns */
+        .notifications-table .col-location a {
+            color: #007bff;
+            text-decoration: none;
+            font-weight: 500;
+        }
+         .notifications-table .col-location a:hover {
+            text-decoration: underline;
+        }
+
+        /* Common styles for status badges */
+        .status-badge {
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 15px; /* Creates the pill shape */
+            font-size: 14px;
+            font-weight: 500;
+            text-align: center;
+        }
+        
+        /* Individual status badge colors */
+        .status-acknowledged {
+            background-color: #e3f2fd;
+            color: #1e88e5;
+        }
+
+        .status-responding {
+            background-color: #fff3e0;
+            color: #fb8c00;
+        }
+
+        .status-resolved {
+            background-color: #e8f5e9;
+            color: #43a047;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="notifications-container">
+        <h2>Notifications</h2>
+        <table class="notifications-table">
+            <thead>
+                <tr>
+                    <th class="col-id">Vehicle ID</th>
+                    <th class="col-location">Location</th>
+                    <th class="col-time">Time</th>
+                    <th class="col-status">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>12345</td>
+                    <td class="col-location"><a href="#">View on Map</a></td>
+                    <td>9:15 AM</td>
+                    <td>
+                        <span class="status-badge status-acknowledged">Acknowledged</span>
+                    </td>
+                </tr>
+                <tr>
+                    <td>67890</td>
+                    <td class="col-location"><a href="#">View on Map</a></td>
+                    <td>8:00 AM</td>
+                    <td>
+                        <span class="status-badge status-responding">Responding</span>
+                    </td>
+                </tr>
+                <tr>
+                    <td>11223</td>
+                    <td class="col-location"><a href="#">View on Map</a></td>
+                    <td>Yesterday</td>
+                    <td>
+                        <span class="status-badge status-resolved">Resolved</span>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+const socket = io(); // connect to server
+
+const notificationsTableBody = document.querySelector('.notifications-table tbody');
+
+function addNotification(vehicleData) {
+    const tr = document.createElement('tr');
+
+    const time = new Date(vehicleData.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    tr.innerHTML = `
+        <td>${vehicleData.vehicleId}</td>
+        <td class="col-location"><a href="/map?lat=${vehicleData.latitude}&lng=${vehicleData.longitude}" target="_blank">View on Map</a></td>
+        <td>${time}</td>
+        <td><span class="status-badge status-responding">Responding</span></td>
+    `;
+
+    notificationsTableBody.prepend(tr); // show latest on top
+}
+
+// Listen for new accident alerts
+socket.on('accidentDetected', (data) => {
+    console.log('New accident alert:', data);
+    addNotification(data);
+});
+</script>
+</body>
+</html>```
